@@ -91,10 +91,35 @@ const workflow = {
         jsCode: codeEmail,
       },
       id: "preparer-email",
-      name: "Preparer l'email",
+      name: "Preparer le message",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
       position: [440, 200],
+    },
+    {
+      parameters: {
+        method: "POST",
+        url: "https://api.brevo.com/v3/contacts",
+        sendHeaders: true,
+        headerParameters: {
+          parameters: [
+            { name: "api-key", value: "REMPLACER_PAR_VOTRE_CLE_BREVO" },
+            { name: "content-type", value: "application/json" },
+          ],
+        },
+        sendBody: true,
+        specifyBody: "json",
+        jsonBody: "={{ JSON.stringify($json.contactPayload) }}",
+        options: { timeout: 15000 },
+      },
+      id: "ajouter-contact",
+      name: "Ajouter le contact",
+      type: "n8n-nodes-base.httpRequest",
+      typeVersion: 4.2,
+      position: [660, 200],
+      // Un echec d'ajout ne doit pas priver le visiteur de sa ressource :
+      // on continue vers l'envoi, et l'erreur reste visible dans Executions.
+      onError: "continueRegularOutput",
     },
     {
       parameters: {
@@ -109,14 +134,14 @@ const workflow = {
         },
         sendBody: true,
         specifyBody: "json",
-        jsonBody: "={{ JSON.stringify($json.brevoPayload) }}",
+        jsonBody: "={{ JSON.stringify($('Preparer le message').item.json.brevoPayload) }}",
         options: { timeout: 15000 },
       },
       id: "envoyer-brevo",
-      name: "Envoyer via Brevo",
+      name: "Envoyer l'email",
       type: "n8n-nodes-base.httpRequest",
       typeVersion: 4.2,
-      position: [660, 200],
+      position: [880, 200],
     },
   ],
   connections: {
@@ -130,10 +155,13 @@ const workflow = {
       ],
     },
     "Repondre 200": {
-      main: [[{ node: "Preparer l'email", type: "main", index: 0 }]],
+      main: [[{ node: "Preparer le message", type: "main", index: 0 }]],
     },
-    "Preparer l'email": {
-      main: [[{ node: "Envoyer via Brevo", type: "main", index: 0 }]],
+    "Preparer le message": {
+      main: [[{ node: "Ajouter le contact", type: "main", index: 0 }]],
+    },
+    "Ajouter le contact": {
+      main: [[{ node: "Envoyer l'email", type: "main", index: 0 }]],
     },
   },
   settings: { executionOrder: "v1" },

@@ -19,6 +19,31 @@ const ORANGE = '#dc7917';
 const FOND = '#f1f1f2';
 const GRIS = '#6f6f74';
 
+/**
+ * Listes Brevo. Un email transactionnel ne cree aucun contact : c'est un
+ * appel distinct, et c'est lui qui alimente la base sur laquelle on mesure
+ * les taux d'ouverture et on lance les campagnes.
+ *
+ * LISTE_PRINCIPALE recoit tout le monde : c'est elle qu'on vise pour la
+ * newsletter et les annonces d'articles.
+ * LISTES_PAR_TAG ajoute une liste ciblee, pour pouvoir relancer par centre
+ * d'interet sans ecrire a toute la base.
+ *
+ * Les identifiants sont des nombres, lisibles dans l'URL de chaque liste
+ * dans Brevo. Mettre 0 pour desactiver une liste ciblee.
+ */
+const LISTE_PRINCIPALE = 0;
+
+const LISTES_PAR_TAG = {
+  'pack-workflows': 0,
+  'livre-blanc': 0,
+  'mini-formation': 0,
+  'formation-metier': 0,
+  'formation-equipes': 0,
+  newsletter: 0,
+  contact: 0,
+};
+
 const CONTENUS = {
   'pack-workflows': {
     objet: 'Votre pack de 10 workflows n8n',
@@ -179,14 +204,34 @@ const html = '<!DOCTYPE html>'
 
   + '</table></td></tr></table></body></html>';
 
-/* Charge utile attendue par l'API Brevo, prete a etre envoyee telle quelle. */
+/* Listes auxquelles rattacher ce contact, doublons et zeros ecartes. */
+const listIds = [LISTE_PRINCIPALE, LISTES_PAR_TAG[tag]]
+  .filter(function (id) { return Number.isInteger(id) && id > 0; })
+  .filter(function (id, i, tous) { return tous.indexOf(id) === i; });
+
+const attribution = lead.attribution || {};
+
+/* Charges utiles attendues par l'API Brevo, pretes a etre envoyees. */
 return [{
   json: {
     objet: contenu.objet,
     destinataire: lead.email,
     tag: tag,
+    contactPayload: {
+      email: lead.email,
+      attributes: {
+        PRENOM: prenom || '',
+        SOURCE: lead.source || '',
+        TAG: tag,
+        CANAL: attribution.utmSource || attribution.referrer || 'direct',
+      },
+      listIds: listIds,
+      // Sans ceci, une seconde inscription avec la meme adresse renvoie une
+      // erreur au lieu de mettre le contact a jour.
+      updateEnabled: true,
+    },
     brevoPayload: {
-      sender: { name: 'flow_lab', email: 'hello@flow-lab.fr' },
+      sender: { name: 'flow_lab', email: 'flow.lab003@gmail.com' },
       to: [prenom ? { email: lead.email, name: prenom } : { email: lead.email }],
       subject: contenu.objet,
       htmlContent: html,

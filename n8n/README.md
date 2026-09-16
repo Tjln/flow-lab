@@ -39,10 +39,13 @@ Secret valide ?  --- non ---> Refuser 401
 Repondre 200         (le site est libere tout de suite)
    |
    v
-Preparer l'email     (choisit le contenu selon le tag, construit le HTML)
+Preparer le message  (choisit le contenu selon le tag, construit le HTML
+   |                  et la fiche contact)
+   v
+Ajouter le contact   (POST /v3/contacts : alimente la base Brevo)
    |
    v
-Envoyer via Brevo    (API transactionnelle)
+Envoyer l'email      (POST /v3/smtp/email : transactionnel)
 ```
 
 Le site est libere avant l'envoi : si Brevo met quatre secondes, le visiteur
@@ -55,7 +58,32 @@ Le JSON contient deux marqueurs volontairement explicites :
 | Marqueur | Ou | Remplacer par |
 | --- | --- | --- |
 | `REMPLACER_PAR_VOTRE_SECRET` | noeud « Secret valide ? » | la meme valeur que `N8N_WEBHOOK_SECRET` dans Vercel |
-| `REMPLACER_PAR_VOTRE_CLE_BREVO` | noeud « Envoyer via Brevo » | la cle API v3 de Brevo |
+| `REMPLACER_PAR_VOTRE_CLE_BREVO` | noeuds « Ajouter le contact » **et** « Envoyer l'email » | la cle API v3 de Brevo |
+
+## Les listes Brevo
+
+Un email transactionnel ne cree aucun contact : les deux appels sont
+distincts. C'est « Ajouter le contact » qui alimente la base sur laquelle se
+mesurent les taux d'ouverture et se lancent les campagnes.
+
+Avant que cela fonctionne, il faut :
+
+1. Creer les listes dans Brevo (Contacts, onglet Lists). Au minimum une liste
+   generale, qui recevra tout le monde.
+2. Creer trois attributs texte dans Contacts, Settings, Contact attributes :
+   `SOURCE`, `TAG` et `CANAL`. Brevo refuse les attributs inconnus.
+   `PRENOM` existe deja sur un compte en francais.
+3. Reporter les identifiants de liste en haut de `preparer-email.js` :
+   `LISTE_PRINCIPALE` puis, si besoin, une liste par tag. L'identifiant est le
+   nombre visible dans l'URL de la liste.
+4. Regenerer et reimporter le workflow.
+
+`updateEnabled: true` est indispensable : sans lui, une deuxieme inscription
+avec la meme adresse renvoie une erreur au lieu de mettre le contact a jour.
+
+Le noeud « Ajouter le contact » est regle pour laisser passer en cas d'echec :
+un probleme de liste ne doit pas priver le visiteur de sa ressource. L'erreur
+reste visible dans Executions.
 
 ## Les tags emis par le site
 
@@ -75,8 +103,6 @@ Un tag inconnu retombe sur le contenu `newsletter` plutot que d'echouer.
 
 ## Ce que ce workflow ne fait pas encore
 
-- Il n'enregistre rien : les adresses ne sont connues que de Brevo. Ajouter un
-  noeud Google Sheets apres « Repondre 200 » quand la base de contacts sera
-  necessaire.
 - Il n'envoie pas la sequence de relance J+1, J+3, J+7.
+- Il ne recopie rien dans Google Sheets : la base vit uniquement dans Brevo.
 - La mini-formation envoie un seul email, pas les cinq lecons.
