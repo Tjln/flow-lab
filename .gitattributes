@@ -1,0 +1,12 @@
+# Normalisation des fins de ligne pour le texte.
+* text=auto
+
+# Fichiers binaires : toute conversion de fin de ligne les corrompt.
+# Sans cette regle, un clone sous Windows recuperait un PDF illisible.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
