@@ -7,6 +7,7 @@ import { MotionProvider } from "@/components/motion/MotionProvider";
 import { MagicCursor } from "@/components/motion/MagicCursor";
 import { BackToTop } from "@/components/motion/BackToTop";
 import { site } from "@/config/site";
+import { Analytics } from "@vercel/analytics/next";
 
 /* Titres : grotesque geometrique, dans l'esprit du logotype.
    Texte courant : Inter, neutre et tres lisible en petit corps.
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="flex-1">{children}</main>
         <Footer />
         <BackToTop />
+        <Analytics />
       </body>
     </html>
   );
