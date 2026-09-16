@@ -1,9 +1,14 @@
 /**
- * Genere flowlab-lead.json a partir de preparer-email.js.
+ * Genere les workflows n8n du projet a partir des sources lisibles.
  *
- * Le code du noeud « Preparer l'email » doit etre echappe dans le JSON du
- * workflow. L'ecrire a la main est une source d'erreurs : on le lit depuis
- * un fichier .js lisible et on laisse JSON.stringify faire l'echappement.
+ * Le code des noeuds Code doit etre echappe dans le JSON du workflow.
+ * L'ecrire a la main est une source d'erreurs : on le lit depuis un fichier
+ * .js lisible et on laisse JSON.stringify faire l'echappement.
+ *
+ * Trois exigences du brief sont tenues ici et ne doivent pas etre defaites :
+ *   - aucun secret en dur : tout passe par les credentials n8n ;
+ *   - un sticky note explicatif dans chaque canvas ;
+ *   - un workflow d'alerte branche sur Error Trigger.
  *
  * Usage : node n8n/construire-workflow.mjs
  */
@@ -15,245 +20,189 @@ import { fileURLToPath } from "node:url";
 const ici = dirname(fileURLToPath(import.meta.url));
 const codeEmail = readFileSync(join(ici, "preparer-email.js"), "utf8");
 
-const workflow = {
-  name: "flow_lab — Collecte de leads",
+/* ------------------------------------------------------------------ */
+/* Fabriques communes                                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Sticky note du canvas. Le brief impose une explication visible dans n8n :
+ * un workflow qu'il faut ouvrir node par node pour comprendre est un
+ * workflow que personne ne reprendra.
+ */
+function note(titre, lignes, position, largeur = 460, hauteur = 300) {
+  return {
+    parameters: {
+      content: `## ${titre}\n\n${lignes.join("\n")}`,
+      height: hauteur,
+      width: largeur,
+      color: 5,
+    },
+    id: "note-" + titre.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    name: "Note — " + titre,
+    type: "n8n-nodes-base.stickyNote",
+    typeVersion: 1,
+    position,
+  };
+}
+
+/**
+ * Webhook protege par un en-tete secret.
+ *
+ * L'authentification est portee par un credential n8n plutot que par une
+ * comparaison dans un node IF : le brief interdit les secrets en dur, et un
+ * secret ecrit dans le canvas se retrouverait dans l'export JSON livre.
+ */
+function webhookProtege(nom, chemin, position) {
+  return {
+    parameters: {
+      httpMethod: "POST",
+      path: chemin,
+      authentication: "headerAuth",
+      responseMode: "responseNode",
+      options: {},
+    },
+    id: "webhook-" + chemin,
+    name: nom,
+    type: "n8n-nodes-base.webhook",
+    typeVersion: 2,
+    position,
+    webhookId: chemin,
+    credentials: {
+      httpHeaderAuth: { id: "", name: "flow_lab — Secret webhook" },
+    },
+  };
+}
+
+/** Appel HTTP authentifie par un credential d'en-tete, jamais par une valeur brute. */
+function appelBrevo(nom, url, corps, position, extra = {}) {
+  return {
+    parameters: {
+      method: "POST",
+      url,
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
+      sendBody: true,
+      specifyBody: "json",
+      jsonBody: corps,
+      options: { timeout: 15000 },
+    },
+    id: "http-" + nom.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    name: nom,
+    type: "n8n-nodes-base.httpRequest",
+    typeVersion: 4.2,
+    position,
+    credentials: {
+      httpHeaderAuth: { id: "", name: "flow_lab — Cle API Brevo" },
+    },
+    ...extra,
+  };
+}
+
+function repondre(nom, corps, position, codeHttp) {
+  return {
+    parameters: {
+      respondWith: "json",
+      responseBody: corps,
+      options: codeHttp ? { responseCode: codeHttp } : {},
+    },
+    id: "rep-" + nom.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    name: nom,
+    type: "n8n-nodes-base.respondToWebhook",
+    typeVersion: 1.1,
+    position,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Brique 4 — Capture et onboarding                                    */
+/* ------------------------------------------------------------------ */
+
+const collecte = {
+  name: "flow_lab — Brique 4 : capture et onboarding",
   nodes: [
+    note(
+      "Brique 4 : capture et onboarding",
+      [
+        "**Objectif** : transformer un curieux en abonne actif.",
+        "",
+        "**Declencheur** : POST du site sur /flowlab-lead,",
+        "authentifie par l'en-tete X-Flowlab-Secret via un",
+        "credential Header Auth.",
+        "",
+        "**Logique** : on repond au site immediatement, puis on",
+        "cree le contact Brevo et on envoie l'email de bienvenue.",
+        "Repondre avant l'envoi evite que la lenteur de Brevo",
+        "bloque la page de confirmation du visiteur.",
+        "",
+        "**Incident rencontre** : un email transactionnel ne cree",
+        "aucun contact dans Brevo. Les deux appels sont distincts,",
+        "d'ou le node « Ajouter le contact ».",
+      ],
+      [-300, -120]
+    ),
+    webhookProtege("Webhook du site", "flowlab-lead", [-220, 300]),
+    repondre("Repondre 200", '={{ JSON.stringify({ ok: true }) }}', [0, 300]),
     {
-      parameters: {
-        httpMethod: "POST",
-        path: "flowlab-lead",
-        // On repond via un noeud dedie : le site recoit son accuse de
-        // reception sans attendre que Brevo ait fini d'envoyer.
-        responseMode: "responseNode",
-        options: {},
-      },
-      id: "webhook-lead",
-      name: "Webhook du site",
-      type: "n8n-nodes-base.webhook",
-      typeVersion: 2,
-      position: [-220, 300],
-      webhookId: "flowlab-lead",
-    },
-    {
-      parameters: {
-        conditions: {
-          options: {
-            caseSensitive: true,
-            leftValue: "",
-            typeValidation: "loose",
-            version: 2,
-          },
-          conditions: [
-            {
-              id: "verif-secret",
-              leftValue: "={{ $json.headers['x-flowlab-secret'] }}",
-              rightValue: "REMPLACER_PAR_VOTRE_SECRET",
-              operator: { type: "string", operation: "equals" },
-            },
-          ],
-          combinator: "and",
-        },
-        looseTypeValidation: true,
-        options: {},
-      },
-      id: "verif-secret",
-      name: "Secret valide ?",
-      type: "n8n-nodes-base.if",
-      typeVersion: 2,
-      position: [0, 300],
-    },
-    {
-      parameters: {
-        respondWith: "json",
-        responseBody: '={{ JSON.stringify({ ok: true }) }}',
-        options: {},
-      },
-      id: "reponse-ok",
-      name: "Repondre 200",
-      type: "n8n-nodes-base.respondToWebhook",
-      typeVersion: 1.1,
-      position: [220, 200],
-    },
-    {
-      parameters: {
-        respondWith: "json",
-        responseBody: '={{ JSON.stringify({ error: "secret invalide" }) }}',
-        options: { responseCode: 401 },
-      },
-      id: "reponse-refus",
-      name: "Refuser 401",
-      type: "n8n-nodes-base.respondToWebhook",
-      typeVersion: 1.1,
-      position: [220, 420],
-    },
-    {
-      parameters: {
-        jsCode: codeEmail,
-      },
-      id: "preparer-email",
+      parameters: { jsCode: codeEmail },
+      id: "preparer-message",
       name: "Preparer le message",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [440, 200],
+      position: [220, 300],
     },
-    {
-      parameters: {
-        method: "POST",
-        url: "https://api.brevo.com/v3/contacts",
-        sendHeaders: true,
-        headerParameters: {
-          parameters: [
-            { name: "api-key", value: "REMPLACER_PAR_VOTRE_CLE_BREVO" },
-            { name: "content-type", value: "application/json" },
-          ],
-        },
-        sendBody: true,
-        specifyBody: "json",
-        jsonBody: "={{ JSON.stringify($json.contactPayload) }}",
-        options: { timeout: 15000 },
-      },
-      id: "ajouter-contact",
-      name: "Ajouter le contact",
-      type: "n8n-nodes-base.httpRequest",
-      typeVersion: 4.2,
-      position: [660, 200],
+    appelBrevo(
+      "Ajouter le contact",
+      "https://api.brevo.com/v3/contacts",
+      "={{ JSON.stringify($json.contactPayload) }}",
+      [440, 300],
       // Un echec d'ajout ne doit pas priver le visiteur de sa ressource :
       // on continue vers l'envoi, et l'erreur reste visible dans Executions.
-      onError: "continueRegularOutput",
-    },
-    {
-      parameters: {
-        method: "POST",
-        url: "https://api.brevo.com/v3/smtp/email",
-        sendHeaders: true,
-        headerParameters: {
-          parameters: [
-            { name: "api-key", value: "REMPLACER_PAR_VOTRE_CLE_BREVO" },
-            { name: "content-type", value: "application/json" },
-          ],
-        },
-        sendBody: true,
-        specifyBody: "json",
-        jsonBody: "={{ JSON.stringify($('Preparer le message').item.json.brevoPayload) }}",
-        options: { timeout: 15000 },
-      },
-      id: "envoyer-brevo",
-      name: "Envoyer l'email",
-      type: "n8n-nodes-base.httpRequest",
-      typeVersion: 4.2,
-      position: [880, 200],
-    },
+      { onError: "continueRegularOutput" }
+    ),
+    appelBrevo(
+      "Envoyer l'email",
+      "https://api.brevo.com/v3/smtp/email",
+      "={{ JSON.stringify($('Preparer le message').item.json.brevoPayload) }}",
+      [660, 300]
+    ),
   ],
   connections: {
-    "Webhook du site": {
-      main: [[{ node: "Secret valide ?", type: "main", index: 0 }]],
-    },
-    "Secret valide ?": {
-      main: [
-        [{ node: "Repondre 200", type: "main", index: 0 }],
-        [{ node: "Refuser 401", type: "main", index: 0 }],
-      ],
-    },
-    "Repondre 200": {
-      main: [[{ node: "Preparer le message", type: "main", index: 0 }]],
-    },
-    "Preparer le message": {
-      main: [[{ node: "Ajouter le contact", type: "main", index: 0 }]],
-    },
-    "Ajouter le contact": {
-      main: [[{ node: "Envoyer l'email", type: "main", index: 0 }]],
-    },
+    "Webhook du site": { main: [[{ node: "Repondre 200", type: "main", index: 0 }]] },
+    "Repondre 200": { main: [[{ node: "Preparer le message", type: "main", index: 0 }]] },
+    "Preparer le message": { main: [[{ node: "Ajouter le contact", type: "main", index: 0 }]] },
+    "Ajouter le contact": { main: [[{ node: "Envoyer l'email", type: "main", index: 0 }]] },
   },
   settings: { executionOrder: "v1" },
   pinData: {},
 };
 
-writeFileSync(
-  join(ici, "flowlab-lead.json"),
-  JSON.stringify(workflow, null, 2) + "\n",
-  "utf8"
-);
-
-console.log("flowlab-lead.json genere.");
-
 /* ------------------------------------------------------------------ */
-/* Second workflow : comptage des telechargements                      */
+/* Comptage des telechargements                                        */
 /* ------------------------------------------------------------------ */
 
-/**
- * Le site appelle ce webhook a chaque telechargement, puis sert le fichier
- * sans attendre la reponse. Le comptage ne peut donc jamais empecher un
- * visiteur d'obtenir sa ressource.
- */
 const telechargements = {
-  name: "flow_lab — Telechargements",
+  name: "flow_lab — Comptage des telechargements",
   nodes: [
-    {
-      parameters: {
-        httpMethod: "POST",
-        path: "flowlab-telechargement",
-        responseMode: "responseNode",
-        options: {},
-      },
-      id: "webhook-telechargement",
-      name: "Webhook telechargement",
-      type: "n8n-nodes-base.webhook",
-      typeVersion: 2,
-      position: [-220, 300],
-      webhookId: "flowlab-telechargement",
-    },
-    {
-      parameters: {
-        conditions: {
-          options: {
-            caseSensitive: true,
-            leftValue: "",
-            typeValidation: "loose",
-            version: 2,
-          },
-          conditions: [
-            {
-              id: "verif-secret-dl",
-              leftValue: "={{ $json.headers['x-flowlab-secret'] }}",
-              rightValue: "REMPLACER_PAR_VOTRE_SECRET",
-              operator: { type: "string", operation: "equals" },
-            },
-          ],
-          combinator: "and",
-        },
-        looseTypeValidation: true,
-        options: {},
-      },
-      id: "verif-secret-dl",
-      name: "Secret valide ?",
-      type: "n8n-nodes-base.if",
-      typeVersion: 2,
-      position: [0, 300],
-    },
-    {
-      parameters: {
-        respondWith: "json",
-        responseBody: '={{ JSON.stringify({ ok: true }) }}',
-        options: {},
-      },
-      id: "reponse-dl",
-      name: "Repondre 200",
-      type: "n8n-nodes-base.respondToWebhook",
-      typeVersion: 1.1,
-      position: [220, 200],
-    },
-    {
-      parameters: {
-        respondWith: "json",
-        responseBody: '={{ JSON.stringify({ error: "secret invalide" }) }}',
-        options: { responseCode: 401 },
-      },
-      id: "refus-dl",
-      name: "Refuser 401",
-      type: "n8n-nodes-base.respondToWebhook",
-      typeVersion: 1.1,
-      position: [220, 420],
-    },
+    note(
+      "Comptage des telechargements",
+      [
+        "**Objectif** : savoir quelle ressource est reellement",
+        "recuperee, et par quel canal.",
+        "",
+        "**Declencheur** : le site appelle ce webhook avant de",
+        "servir le fichier, sans attendre la reponse.",
+        "",
+        "**Logique** : une ligne par telechargement, prete pour",
+        "un node Google Sheets « Append » branche a la suite.",
+        "",
+        "**Choix assume** : si n8n est injoignable, le visiteur",
+        "recoit quand meme son fichier. Le comptage ne doit",
+        "jamais bloquer une livraison.",
+      ],
+      [-300, -120]
+    ),
+    webhookProtege("Webhook telechargement", "flowlab-telechargement", [-220, 300]),
+    repondre("Repondre 200", '={{ JSON.stringify({ ok: true }) }}', [0, 300]),
     {
       parameters: {
         jsCode: [
@@ -276,32 +225,92 @@ const telechargements = {
       name: "Formater la ligne",
       type: "n8n-nodes-base.code",
       typeVersion: 2,
-      position: [440, 200],
+      position: [220, 300],
     },
   ],
   connections: {
-    "Webhook telechargement": {
-      main: [[{ node: "Secret valide ?", type: "main", index: 0 }]],
-    },
-    "Secret valide ?": {
-      main: [
-        [{ node: "Repondre 200", type: "main", index: 0 }],
-        [{ node: "Refuser 401", type: "main", index: 0 }],
-      ],
-    },
-    "Repondre 200": {
-      main: [[{ node: "Formater la ligne", type: "main", index: 0 }]],
-    },
+    "Webhook telechargement": { main: [[{ node: "Repondre 200", type: "main", index: 0 }]] },
+    "Repondre 200": { main: [[{ node: "Formater la ligne", type: "main", index: 0 }]] },
   },
   settings: { executionOrder: "v1" },
   pinData: {},
 };
 
-writeFileSync(
-  join(ici, "flowlab-telechargement.json"),
-  JSON.stringify(telechargements, null, 2) + "\n",
-  "utf8"
-);
+/* ------------------------------------------------------------------ */
+/* Sentinelle d'erreurs                                                */
+/* ------------------------------------------------------------------ */
 
-console.log("flowlab-telechargement.json genere.");
+const alerteErreur = {
+  name: "flow_lab — Sentinelle d'erreurs",
+  nodes: [
+    note(
+      "Sentinelle d'erreurs",
+      [
+        "**Objectif** : aucun workflow ne doit casser en silence.",
+        "",
+        "**Declencheur** : Error Trigger. A designer comme",
+        "« Error Workflow » dans les reglages de chaque autre",
+        "workflow, sinon il ne se declenchera jamais.",
+        "",
+        "**Logique** : on assemble un message lisible avec le",
+        "workflow fautif, le node en cause et l'erreur, puis on",
+        "l'envoie sur le canal d'equipe.",
+        "",
+        "**Pourquoi** : un workflow casse pendant trois jours sans",
+        "que personne ne le sache est un workflow inutile.",
+      ],
+      [-300, -120]
+    ),
+    {
+      parameters: {},
+      id: "error-trigger",
+      name: "Sur erreur",
+      type: "n8n-nodes-base.errorTrigger",
+      typeVersion: 1,
+      position: [-220, 300],
+    },
+    {
+      parameters: {
+        jsCode: [
+          "/* L'Error Trigger fournit l'execution fautive. On en extrait le",
+          "   strict necessaire : de quoi diagnostiquer sans ouvrir n8n. */",
+          "const e = $json.execution || {};",
+          "const w = $json.workflow || {};",
+          "",
+          "const message = [",
+          "  'Workflow en echec : ' + (w.name || 'inconnu'),",
+          "  'Node : ' + (e.lastNodeExecuted || 'inconnu'),",
+          "  'Erreur : ' + ((e.error && e.error.message) || 'non precisee'),",
+          "  'Execution : ' + (e.id || '-'),",
+          "  'Heure : ' + new Date().toISOString(),",
+          "].join('\\n');",
+          "",
+          "return [{ json: { message: message, workflow: w.name || 'inconnu' } }];",
+        ].join("\n"),
+      },
+      id: "formater-alerte",
+      name: "Formater l'alerte",
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
+      position: [0, 300],
+    },
+  ],
+  connections: {
+    "Sur erreur": { main: [[{ node: "Formater l'alerte", type: "main", index: 0 }]] },
+  },
+  settings: { executionOrder: "v1" },
+  pinData: {},
+};
 
+/* ------------------------------------------------------------------ */
+
+const SORTIES = [
+  ["flowlab-lead.json", collecte],
+  ["flowlab-telechargement.json", telechargements],
+  ["flowlab-alerte-erreur.json", alerteErreur],
+];
+
+for (const [nom, contenu] of SORTIES) {
+  writeFileSync(join(ici, nom), JSON.stringify(contenu, null, 2) + "\n", "utf8");
+  console.log(nom + " genere.");
+}

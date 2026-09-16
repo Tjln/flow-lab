@@ -81,8 +81,39 @@ const codeSelection = [
 ].join("\n");
 
 const workflow = {
-  name: "flow_lab — File d'attente X",
+  name: "flow_lab — Brique 3 : distribution X",
   nodes: [
+    {
+      parameters: {
+        content: [
+          "## Brique 3 : distribution sur X",
+          "",
+          "**Objectif** : tenir la regularite de publication, qui",
+          "est le point ou la plupart des comptes neufs abandonnent.",
+          "",
+          "**Declencheur** : deux creneaux par jour, 8 h 30 et 18 h 30.",
+          "",
+          "**Logique** : on lit la file dans Google Sheets, on prend",
+          "la premiere ligne au statut « a publier », on verifie, on",
+          "publie, on marque la ligne.",
+          "",
+          "**Garde-fou** : X facture un post avec lien 0,20 $ contre",
+          "0,015 $ sans lien, soit treize fois plus. Le node de",
+          "selection refuse donc les liens sauf mention explicite.",
+          "",
+          "**Choix assume** : file vide, on ne publie rien plutot que",
+          "de republier un ancien post. Le refus est trace.",
+        ].join("\n"),
+        height: 400,
+        width: 480,
+        color: 5,
+      },
+      id: "note-file-x",
+      name: "Note — Brique 3",
+      type: "n8n-nodes-base.stickyNote",
+      typeVersion: 1,
+      position: [-300, -160],
+    },
     {
       parameters: {
         rule: {

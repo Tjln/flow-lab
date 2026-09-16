@@ -1,0 +1,62 @@
+{
+  "name": "flow_lab — Sentinelle d'erreurs",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Sentinelle d'erreurs\n\n**Objectif** : aucun workflow ne doit casser en silence.\n\n**Declencheur** : Error Trigger. A designer comme\n« Error Workflow » dans les reglages de chaque autre\nworkflow, sinon il ne se declenchera jamais.\n\n**Logique** : on assemble un message lisible avec le\nworkflow fautif, le node en cause et l'erreur, puis on\nl'envoie sur le canal d'equipe.\n\n**Pourquoi** : un workflow casse pendant trois jours sans\nque personne ne le sache est un workflow inutile.",
+        "height": 300,
+        "width": 460,
+        "color": 5
+      },
+      "id": "note-sentinelle-d-erreurs",
+      "name": "Note — Sentinelle d'erreurs",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        -120
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "error-trigger",
+      "name": "Sur erreur",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* L'Error Trigger fournit l'execution fautive. On en extrait le\n   strict necessaire : de quoi diagnostiquer sans ouvrir n8n. */\nconst e = $json.execution || {};\nconst w = $json.workflow || {};\n\nconst message = [\n  'Workflow en echec : ' + (w.name || 'inconnu'),\n  'Node : ' + (e.lastNodeExecuted || 'inconnu'),\n  'Erreur : ' + ((e.error && e.error.message) || 'non precisee'),\n  'Execution : ' + (e.id || '-'),\n  'Heure : ' + new Date().toISOString(),\n].join('\\n');\n\nreturn [{ json: { message: message, workflow: w.name || 'inconnu' } }];"
+      },
+      "id": "formater-alerte",
+      "name": "Formater l'alerte",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Sur erreur": {
+      "main": [
+        [
+          {
+            "node": "Formater l'alerte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

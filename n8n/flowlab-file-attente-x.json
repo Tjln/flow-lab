@@ -1,6 +1,22 @@
 {
-  "name": "flow_lab — File d'attente X",
+  "name": "flow_lab — Brique 3 : distribution X",
   "nodes": [
+    {
+      "parameters": {
+        "content": "## Brique 3 : distribution sur X\n\n**Objectif** : tenir la regularite de publication, qui\nest le point ou la plupart des comptes neufs abandonnent.\n\n**Declencheur** : deux creneaux par jour, 8 h 30 et 18 h 30.\n\n**Logique** : on lit la file dans Google Sheets, on prend\nla premiere ligne au statut « a publier », on verifie, on\npublie, on marque la ligne.\n\n**Garde-fou** : X facture un post avec lien 0,20 $ contre\n0,015 $ sans lien, soit treize fois plus. Le node de\nselection refuse donc les liens sauf mention explicite.\n\n**Choix assume** : file vide, on ne publie rien plutot que\nde republier un ancien post. Le refus est trace.",
+        "height": 400,
+        "width": 480,
+        "color": 5
+      },
+      "id": "note-file-x",
+      "name": "Note — Brique 3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        -160
+      ]
+    },
     {
       "parameters": {
         "rule": {

@@ -1,14 +1,31 @@
 {
-  "name": "flow_lab — Telechargements",
+  "name": "flow_lab — Comptage des telechargements",
   "nodes": [
+    {
+      "parameters": {
+        "content": "## Comptage des telechargements\n\n**Objectif** : savoir quelle ressource est reellement\nrecuperee, et par quel canal.\n\n**Declencheur** : le site appelle ce webhook avant de\nservir le fichier, sans attendre la reponse.\n\n**Logique** : une ligne par telechargement, prete pour\nun node Google Sheets « Append » branche a la suite.\n\n**Choix assume** : si n8n est injoignable, le visiteur\nrecoit quand meme son fichier. Le comptage ne doit\njamais bloquer une livraison.",
+        "height": 300,
+        "width": 460,
+        "color": 5
+      },
+      "id": "note-comptage-des-telechargements",
+      "name": "Note — Comptage des telechargements",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        -120
+      ]
+    },
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "flowlab-telechargement",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "webhook-telechargement",
+      "id": "webhook-flowlab-telechargement",
       "name": "Webhook telechargement",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -16,41 +33,13 @@
         -220,
         300
       ],
-      "webhookId": "flowlab-telechargement"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "verif-secret-dl",
-              "leftValue": "={{ $json.headers['x-flowlab-secret'] }}",
-              "rightValue": "REMPLACER_PAR_VOTRE_SECRET",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "looseTypeValidation": true,
-        "options": {}
-      },
-      "id": "verif-secret-dl",
-      "name": "Secret valide ?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        0,
-        300
-      ]
+      "webhookId": "flowlab-telechargement",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "flow_lab — Secret webhook"
+        }
+      }
     },
     {
       "parameters": {
@@ -58,30 +47,13 @@
         "responseBody": "={{ JSON.stringify({ ok: true }) }}",
         "options": {}
       },
-      "id": "reponse-dl",
+      "id": "rep-repondre-200",
       "name": "Repondre 200",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        220,
-        200
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ error: \"secret invalide\" }) }}",
-        "options": {
-          "responseCode": 401
-        }
-      },
-      "id": "refus-dl",
-      "name": "Refuser 401",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [
-        220,
-        420
+        0,
+        300
       ]
     },
     {
@@ -93,8 +65,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        440,
-        200
+        220,
+        300
       ]
     }
   ],
@@ -103,25 +75,7 @@
       "main": [
         [
           {
-            "node": "Secret valide ?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Secret valide ?": {
-      "main": [
-        [
-          {
             "node": "Repondre 200",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Refuser 401",
             "type": "main",
             "index": 0
           }
