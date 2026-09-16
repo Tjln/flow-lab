@@ -28,7 +28,7 @@ export default function MentionsLegalesPage() {
             <LegalList
               items={[
                 "Denomination : flow_lab, projet etudiant",
-                "Responsables de la publication : Timothe Jaulneau et Reda Loufti",
+                "Responsables de la publication : Timothe Jaulneau et Reda Loutfi",
                 `Contact : ${site.email}`,
                 "Etablissement de rattachement : a completer",
               ]}

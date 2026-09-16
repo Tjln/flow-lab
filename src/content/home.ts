@@ -61,7 +61,7 @@ export const team = [
     text: "Construit les workflows et connecte les outils entre eux.",
   },
   {
-    name: "Reda Loufti",
+    name: "Reda Loutfi",
     role: "Formation et contenu",
     text: "Concoit les parcours de formation et les ressources publiees.",
   },

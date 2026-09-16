@@ -31,7 +31,7 @@ export const site = {
     "flow_lab forme les freelances, PME et equipes ops a n8n, et livre des workflows prets a l'emploi. Formations, ressources gratuites et conseil en automatisation.",
   url: resolveSiteUrl(),
   locale: "fr_FR",
-  email: "hello@flow-lab.fr",
+  email: "flow.lab003@gmail.com",
   phone: "+33 6 12 34 56 78",
 } as const;
 

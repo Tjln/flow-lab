@@ -1,0 +1,51 @@
+{
+  "name": "flow_lab 04 — Accuse de reception et routage",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "formulaire",
+        "options": {}
+      },
+      "name": "Recevoir le formulaire",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "formulaire",
+      "id": "n0",
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Repondre vite compte autant que repondre bien : un accuse de\n   reception immediat evite la relance impatiente du lendemain. */\nconst f = $json.body || $json;\nconst email = (f.email || '').trim().toLowerCase();\n\nif (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(email)) {\n  throw new Error('Adresse invalide : ' + email);\n}\n\n/* Le routage evite qu'une demande commerciale finisse dans la file\n   du support, et inversement. */\nconst texte = (f.message || '').toLowerCase();\nlet destination = 'general';\nif (texte.includes('devis') || texte.includes('tarif')) destination = 'commercial';\nif (texte.includes('bug') || texte.includes('probleme')) destination = 'support';\n\nreturn [{ json: { email: email, destination: destination, message: f.message || '' } }];"
+      },
+      "name": "Valider et router",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "n1",
+      "position": [
+        240,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Recevoir le formulaire": {
+      "main": [
+        [
+          {
+            "node": "Valider et router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

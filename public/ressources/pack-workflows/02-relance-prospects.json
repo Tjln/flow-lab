@@ -12,10 +12,10 @@
           ]
         }
       },
-      "id": "declencheur",
       "name": "Chaque jour a 9 h",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
+      "id": "n0",
       "position": [
         0,
         300
@@ -25,25 +25,38 @@
       "parameters": {
         "jsCode": "/* Remplacez cette source par votre CRM ou votre Google Sheet.\n   Le reste du workflow ne depend pas de l'outil choisi. */\nreturn [\n  { json: { email: 'prospect@example.com', prenom: 'Camille', envoyeLe: '2026-09-01', relances: 0 } },\n];"
       },
-      "id": "source",
       "name": "Lire les prospects",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
+      "id": "n1",
       "position": [
-        220,
+        240,
         300
       ]
     },
     {
       "parameters": {
-        "jsCode": "/* Deux garde-fous : un delai minimum, et un plafond de relances.\n   Sans le plafond, un prospect silencieux est relance indefiniment,\n   ce qui abime la reputation d'envoi du domaine. */\nconst DELAI_JOURS = 5;\nconst MAX_RELANCES = 2;\nconst maintenant = Date.now();\n\nreturn items.filter(function (item) {\n  const jours = (maintenant - new Date(item.json.envoyeLe).getTime()) / 86400000;\n  return jours >= DELAI_JOURS && (item.json.relances || 0) < MAX_RELANCES;\n});"
+        "jsCode": "/* Deux garde-fous : un delai minimum et un plafond de relances.\n   Sans le plafond, un prospect silencieux est relance indefiniment,\n   ce qui abime la reputation d'envoi de votre domaine. */\nconst DELAI_JOURS = 5;\nconst MAX_RELANCES = 2;\nconst maintenant = Date.now();\n\nreturn items.filter(function (item) {\n  const jours = (maintenant - new Date(item.json.envoyeLe).getTime()) / 86400000;\n  return jours >= DELAI_JOURS && (item.json.relances || 0) < MAX_RELANCES;\n});"
       },
-      "id": "filtrer",
       "name": "A relancer ?",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
+      "id": "n2",
       "position": [
-        440,
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(function (item) {\n  const p = item.json;\n  return { json: Object.assign({}, p, {\n    objet: 'Petite relance, ' + (p.prenom || '') ,\n    message: 'Bonjour ' + (p.prenom || '') + ',\\n\\nJe reviens vers vous au cas ou mon message precedent serait passe inapercu.',\n  }) };\n});"
+      },
+      "name": "Rediger la relance",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "n3",
+      "position": [
+        720,
         300
       ]
     }
@@ -65,6 +78,17 @@
         [
           {
             "node": "A relancer ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A relancer ?": {
+      "main": [
+        [
+          {
+            "node": "Rediger la relance",
             "type": "main",
             "index": 0
           }

@@ -1,0 +1,103 @@
+{
+  "name": "flow_lab 05 — Rapport hebdomadaire consolide",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "name": "Chaque lundi a 8 h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "id": "n0",
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Remplacez ces valeurs par vos vraies sources : Sheets, base de\n   donnees, API interne. La consolidation ne change pas. */\nreturn [\n  { json: { source: 'Site', indicateur: 'Visiteurs', valeur: 1240, precedent: 980 } },\n  { json: { source: 'Emails', indicateur: 'Inscrits', valeur: 87, precedent: 61 } },\n  { json: { source: 'Ventes', indicateur: 'Devis envoyes', valeur: 12, precedent: 15 } },\n];"
+      },
+      "name": "Rassembler les sources",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "n1",
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Une valeur brute ne dit rien sans son evolution : c'est la\n   variation qui declenche une decision, pas le chiffre seul. */\nreturn items.map(function (item) {\n  const d = item.json;\n  const evolution = d.precedent ? ((d.valeur - d.precedent) / d.precedent) * 100 : 0;\n  return { json: Object.assign({}, d, {\n    evolution: Math.round(evolution),\n    sens: evolution >= 0 ? 'hausse' : 'baisse',\n  }) };\n});"
+      },
+      "name": "Calculer les evolutions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "n2",
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lignes = items.map(function (item) {\n  const d = item.json;\n  const signe = d.evolution >= 0 ? '+' : '';\n  return d.indicateur + ' : ' + d.valeur + ' (' + signe + d.evolution + ' %)';\n});\n\nreturn [{ json: { objet: 'Rapport de la semaine', corps: lignes.join('\\n') } }];"
+      },
+      "name": "Mettre en forme le rapport",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "n3",
+      "position": [
+        720,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Chaque lundi a 8 h": {
+      "main": [
+        [
+          {
+            "node": "Rassembler les sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rassembler les sources": {
+      "main": [
+        [
+          {
+            "node": "Calculer les evolutions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculer les evolutions": {
+      "main": [
+        [
+          {
+            "node": "Mettre en forme le rapport",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

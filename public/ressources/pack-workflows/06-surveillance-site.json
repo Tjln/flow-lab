@@ -1,0 +1,82 @@
+{
+  "name": "flow_lab 06 — Surveillance d'un site",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "name": "Toutes les 15 minutes",
+      "type": "n8n-nodes-base.interval",
+      "typeVersion": 1.1,
+      "id": "n0",
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://example.com",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "name": "Appeler le site",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "id": "n1",
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Sans alerte, une panne se decouvre par un client mecontent.\n   Ce workflow ne remplace pas une supervision professionnelle,\n   mais il couvre le cas le plus frequent : le site ne repond plus. */\nconst reponse = $json;\nconst enPanne = !reponse || reponse.error !== undefined;\n\nreturn [{\n  json: {\n    enPanne: enPanne,\n    verifieLe: new Date().toISOString(),\n    message: enPanne ? 'Le site ne repond pas' : 'Le site repond normalement',\n  },\n}];"
+      },
+      "name": "Verifier la reponse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "n2",
+      "position": [
+        480,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Toutes les 15 minutes": {
+      "main": [
+        [
+          {
+            "node": "Appeler le site",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appeler le site": {
+      "main": [
+        [
+          {
+            "node": "Verifier la reponse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

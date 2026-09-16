@@ -11,6 +11,10 @@ l'email de confirmation aux couleurs de la charte.
 | `construire-workflow.mjs` | Regenere le JSON a partir du `.js` |
 | `apercu-email.html` | Rendu de l'email, a ouvrir dans un navigateur |
 
+Les ressources telechargeables sont generees a part :
+`node scripts/construire-ressources.mjs` pour les dix workflows,
+`python scripts/construire-guide.py` pour le guide PDF.
+
 Pour modifier les emails : editer `preparer-email.js`, puis
 
 ```bash

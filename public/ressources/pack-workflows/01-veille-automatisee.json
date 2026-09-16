@@ -12,10 +12,10 @@
           ]
         }
       },
-      "id": "declencheur",
       "name": "Chaque matin a 7 h",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
+      "id": "n0",
       "position": [
         0,
         300
@@ -26,25 +26,25 @@
         "url": "https://news.google.com/rss/search?q=automatisation+n8n&hl=fr",
         "options": {}
       },
-      "id": "lire-flux",
       "name": "Lire le flux RSS",
       "type": "n8n-nodes-base.rssFeedRead",
       "typeVersion": 1.2,
+      "id": "n1",
       "position": [
-        220,
+        240,
         300
       ]
     },
     {
       "parameters": {
-        "jsCode": "/* Filtre sur mots-cles. Commencez large pendant une semaine, notez\n   ce que vous ignorez systematiquement, puis resserrez : un bon\n   filtre se regle en observant, pas en devinant. */\nconst MOTS = ['n8n', 'automatisation', 'workflow', 'no-code'];\n\nreturn items.filter(function (item) {\n  const texte = ((item.json.title || '') + ' ' + (item.json.contentSnippet || '')).toLowerCase();\n  return MOTS.some(function (mot) { return texte.includes(mot); });\n});"
+        "jsCode": "/* Commencez large pendant une semaine, notez ce que vous ignorez\n   systematiquement, puis resserrez : un bon filtre se regle en\n   observant, pas en devinant. */\nconst MOTS = ['n8n', 'automatisation', 'workflow', 'no-code'];\n\nreturn items.filter(function (item) {\n  const texte = ((item.json.title || '') + ' ' + (item.json.contentSnippet || '')).toLowerCase();\n  return MOTS.some(function (mot) { return texte.includes(mot); });\n});"
       },
-      "id": "filtrer",
       "name": "Ecarter le bruit",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
+      "id": "n2",
       "position": [
-        440,
+        480,
         300
       ]
     },
@@ -52,12 +52,12 @@
       "parameters": {
         "jsCode": "/* Un seul message recapitulatif plutot qu'un email par article :\n   remplacer une boite mail encombree par une autre ne sert a rien. */\nconst lignes = items.map(function (item) {\n  return '- ' + item.json.title + '\\n  ' + item.json.link;\n});\n\nreturn [{ json: { total: items.length, resume: lignes.join('\\n') } }];"
       },
-      "id": "resumer",
       "name": "Assembler le resume",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
+      "id": "n3",
       "position": [
-        660,
+        720,
         300
       ]
     }

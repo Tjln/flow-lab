@@ -1,0 +1,79 @@
+{
+  "name": "flow_lab 10 — Recapitulatif des mentions sociales",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 17,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "name": "Chaque vendredi a 17 h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "id": "n0",
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* A brancher sur les API des reseaux, ou sur un outil de veille.\n   La structure attendue est volontairement minimale. */\nreturn [\n  { json: { reseau: 'LinkedIn', auteur: 'Camille', texte: 'Merci pour le pack !', sentiment: 'positif' } },\n  { json: { reseau: 'X', auteur: 'Lou', texte: 'Ca ne marche pas chez moi', sentiment: 'negatif' } },\n];"
+      },
+      "name": "Rassembler les mentions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "n1",
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Les mentions negatives passent en tete : ce sont les seules qui\n   coutent quelque chose si on les laisse sans reponse. */\nconst ordre = { negatif: 0, neutre: 1, positif: 2 };\n\nconst triees = items\n  .map(function (item) { return item.json; })\n  .sort(function (a, b) { return ordre[a.sentiment] - ordre[b.sentiment]; });\n\nconst lignes = triees.map(function (m) {\n  return '[' + m.sentiment + '] ' + m.reseau + ' — ' + m.auteur + ' : ' + m.texte;\n});\n\nreturn [{\n  json: {\n    total: triees.length,\n    aRepondre: triees.filter(function (m) { return m.sentiment === 'negatif'; }).length,\n    recapitulatif: lignes.join('\\n'),\n  },\n}];"
+      },
+      "name": "Classer et prioriser",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "n2",
+      "position": [
+        480,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Chaque vendredi a 17 h": {
+      "main": [
+        [
+          {
+            "node": "Rassembler les mentions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rassembler les mentions": {
+      "main": [
+        [
+          {
+            "node": "Classer et prioriser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

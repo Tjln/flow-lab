@@ -7,26 +7,26 @@
         "path": "publier",
         "options": {}
       },
-      "id": "declencheur",
       "name": "Recevoir le contenu",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
+      "webhookId": "publier",
+      "id": "n0",
       "position": [
         0,
         300
-      ],
-      "webhookId": "publier"
+      ]
     },
     {
       "parameters": {
         "jsCode": "/* Une source unique, plusieurs formats : chaque reseau a ses\n   contraintes, et publier le meme texte partout se voit. */\nconst contenu = $json.body || $json;\nconst titre = contenu.titre || '';\nconst lien = contenu.lien || '';\nconst resume = contenu.resume || '';\n\nreturn [{\n  json: {\n    linkedin: titre + '\\n\\n' + resume + '\\n\\n' + lien,\n    x: (titre.length > 200 ? titre.slice(0, 197) + '...' : titre) + '\\n' + lien,\n    instagram: titre + '\\n\\n' + resume + '\\n\\nLien en bio.',\n  },\n}];"
       },
-      "id": "decliner",
       "name": "Decliner par reseau",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
+      "id": "n1",
       "position": [
-        220,
+        240,
         300
       ]
     }

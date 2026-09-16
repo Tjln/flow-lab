@@ -1,0 +1,51 @@
+{
+  "name": "flow_lab 08 — Qualification des leads entrants",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead",
+        "options": {}
+      },
+      "name": "Recevoir le lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "lead",
+      "id": "n0",
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Un score sert a ordonner une file d'attente, pas a juger\n   quelqu'un. Gardez les regles peu nombreuses et explicables. */\nconst lead = $json.body || $json;\nconst email = (lead.email || '').toLowerCase();\nlet score = 0;\n\n/* Une adresse professionnelle signale un cadre d'usage serieux. */\nconst GRATUITES = ['gmail.com', 'yahoo.fr', 'hotmail.com', 'outlook.com'];\nconst domaine = email.split('@')[1] || '';\nif (domaine && !GRATUITES.includes(domaine)) score += 30;\n\nif ((lead.message || '').length > 80) score += 20;\nif (lead.telephone) score += 20;\nif ((lead.entreprise || '').trim()) score += 30;\n\nreturn [{\n  json: {\n    email: email,\n    domaine: domaine,\n    score: score,\n    priorite: score >= 60 ? 'haute' : score >= 30 ? 'moyenne' : 'basse',\n  },\n}];"
+      },
+      "name": "Noter le lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "n1",
+      "position": [
+        240,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Recevoir le lead": {
+      "main": [
+        [
+          {
+            "node": "Noter le lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

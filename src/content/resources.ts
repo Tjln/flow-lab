@@ -51,34 +51,69 @@ export const resources: Resource[] = [
     description:
       "Arretez de partir de la page blanche. Ce pack reunit les 10 workflows que nous deployons le plus souvent chez nos clients : veille, prospection, reporting, publication sociale, relances. Chaque fichier JSON s'importe directement dans n8n et fonctionne apres avoir renseigne vos identifiants.",
     deliverables: [
-      "10 fichiers JSON importables dans n8n",
+      "10 workflows JSON importables dans n8n",
       "Un guide d'installation pas a pas",
       "La liste des credentials necessaires pour chaque workflow",
       "Nos commentaires dans chaque node pour comprendre la logique",
     ],
-    format: "10 fichiers .json + guide PDF",
+    format: "10 fichiers .json + guide PDF de 5 pages",
     cta: "Recevoir le pack gratuitement",
     n8nTag: "pack-workflows",
     files: [
       {
-        label: "Veille automatisee",
+        label: "Guide d'installation (PDF)",
+        path: "/ressources/pack-workflows/guide-flow_lab.pdf",
+        description: "5 pages : installer n8n, importer un workflow, et les 5 erreurs a eviter.",
+      },
+      {
+        label: "01 — Veille automatisee",
         path: "/ressources/pack-workflows/01-veille-automatisee.json",
         description: "Lit un flux RSS chaque matin, ecarte le bruit et assemble un resume.",
       },
       {
-        label: "Relance des prospects",
+        label: "02 — Relance des prospects",
         path: "/ressources/pack-workflows/02-relance-prospects.json",
-        description: "Relance les prospects sans reponse, avec delai et plafond de relances.",
+        description: "Repere les prospects silencieux, avec delai et plafond de relances.",
       },
       {
-        label: "Publication multi-reseaux",
+        label: "03 — Publication multi-reseaux",
         path: "/ressources/pack-workflows/03-publication-multi-reseaux.json",
         description: "Decline un contenu au format de chaque reseau depuis une source unique.",
       },
       {
-        label: "Guide d'installation",
-        path: "/ressources/pack-workflows/LISEZ-MOI.md",
-        description: "Comment importer un workflow et les deux pieges a eviter.",
+        label: "04 — Accuse de reception",
+        path: "/ressources/pack-workflows/04-accuse-reception-formulaire.json",
+        description: "Valide, repond immediatement et oriente la demande vers la bonne file.",
+      },
+      {
+        label: "05 — Rapport hebdomadaire",
+        path: "/ressources/pack-workflows/05-rapport-hebdomadaire.json",
+        description: "Consolide plusieurs sources et calcule les evolutions chaque lundi.",
+      },
+      {
+        label: "06 — Surveillance d'un site",
+        path: "/ressources/pack-workflows/06-surveillance-site.json",
+        description: "Appelle votre site toutes les 15 minutes et signale une panne.",
+      },
+      {
+        label: "07 — Relance des factures",
+        path: "/ressources/pack-workflows/07-relance-factures.json",
+        description: "Trie les impayes par retard et adapte le ton de la relance.",
+      },
+      {
+        label: "08 — Qualification des leads",
+        path: "/ressources/pack-workflows/08-qualification-leads.json",
+        description: "Attribue un score et une priorite a chaque lead entrant.",
+      },
+      {
+        label: "09 — Sauvegarde horodatee",
+        path: "/ressources/pack-workflows/09-sauvegarde-quotidienne.json",
+        description: "Sauvegarde chaque nuit sans ecraser la veille, et purge a 30 jours.",
+      },
+      {
+        label: "10 — Mentions sociales",
+        path: "/ressources/pack-workflows/10-recapitulatif-social.json",
+        description: "Rassemble les mentions de la semaine, negatives en premier.",
       },
     ],
     featured: true,

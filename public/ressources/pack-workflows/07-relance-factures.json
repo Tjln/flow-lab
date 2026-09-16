@@ -1,0 +1,79 @@
+{
+  "name": "flow_lab 07 — Relance des factures impayees",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "name": "Chaque jour a 10 h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "id": "n0",
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* A brancher sur votre outil de facturation ou une feuille de suivi. */\nreturn [\n  { json: { client: 'Exemple SARL', email: 'compta@example.com', numero: 'F-2026-014', montant: 1450, echeance: '2026-09-01', payee: false } },\n];"
+      },
+      "name": "Lire les factures",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "n1",
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Le ton de la relance doit suivre le retard. Une premiere relance\n   sur le ton de la mise en demeure fait perdre des clients qui\n   avaient simplement oublie. */\nconst jours = function (date) {\n  return Math.floor((Date.now() - new Date(date).getTime()) / 86400000);\n};\n\nreturn items\n  .filter(function (item) { return !item.json.payee; })\n  .map(function (item) {\n    const retard = jours(item.json.echeance);\n    let ton = 'rappel';\n    if (retard > 15) ton = 'ferme';\n    if (retard > 45) ton = 'mise en demeure';\n    return { json: Object.assign({}, item.json, { retard: retard, ton: ton }) };\n  })\n  .filter(function (item) { return item.json.retard > 0; });"
+      },
+      "name": "Trier par retard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "n2",
+      "position": [
+        480,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Chaque jour a 10 h": {
+      "main": [
+        [
+          {
+            "node": "Lire les factures",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lire les factures": {
+      "main": [
+        [
+          {
+            "node": "Trier par retard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

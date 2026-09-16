@@ -1,0 +1,79 @@
+{
+  "name": "flow_lab 09 — Sauvegarde quotidienne horodatee",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 3,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "name": "Chaque nuit a 3 h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "id": "n0",
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Une sauvegarde qui ecrase la precedente ne protege de rien :\n   si la corruption passe inapercue une journee, il ne reste plus\n   aucune version saine. D'ou l'horodatage. */\nconst maintenant = new Date();\nconst horodatage = maintenant.toISOString().slice(0, 19).replace(/[:T]/g, '-');\n\nreturn [{\n  json: {\n    nomFichier: 'sauvegarde-' + horodatage + '.json',\n    date: maintenant.toISOString(),\n    /* Remplacez par la lecture de votre source reelle. */\n    contenu: [],\n  },\n}];"
+      },
+      "name": "Preparer la sauvegarde",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "n1",
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Conserver indefiniment finit par couter cher. Trente jours\n   couvrent largement le delai de detection d'une erreur. */\nconst RETENTION_JOURS = 30;\nconst limite = Date.now() - RETENTION_JOURS * 86400000;\n\nreturn [{ json: { aSupprimerAvant: new Date(limite).toISOString() } }];"
+      },
+      "name": "Purger les anciennes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "n2",
+      "position": [
+        480,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Chaque nuit a 3 h": {
+      "main": [
+        [
+          {
+            "node": "Preparer la sauvegarde",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparer la sauvegarde": {
+      "main": [
+        [
+          {
+            "node": "Purger les anciennes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
