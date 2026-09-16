@@ -70,7 +70,7 @@ export default function ConfidentialitePage() {
                 "n8n, pour l'acheminement et l'automatisation des envois",
                 "Google Sheets, comme base de contacts",
                 "Brevo, pour l'envoi des emails",
-                "Vercel, pour l'hebergement du site",
+                "Vercel, pour l'hebergement du site et la mesure d'audience",
               ]}
             />
             <p>
@@ -100,10 +100,19 @@ export default function ConfidentialitePage() {
             </p>
           </LegalBlock>
 
-          <LegalBlock title="Cookies">
+          <LegalBlock title="Cookies et mesure d&apos;audience">
             <p>
-              Ce site ne depose aucun cookie publicitaire ni traceur tiers. Les
-              informations d&apos;origine de visite sont conservees dans le stockage
+              Ce site ne depose aucun cookie publicitaire et ne vous suit pas d&apos;un
+              site a l&apos;autre.
+            </p>
+            <p>
+              Nous utilisons la mesure d&apos;audience de Vercel, qui compte les pages
+              vues sans cookie et sans construire de profil individuel. Elle nous sert
+              uniquement a savoir quelles pages sont consultees et par quel canal les
+              visiteurs arrivent.
+            </p>
+            <p>
+              Les informations d&apos;origine de visite sont conservees dans le stockage
               local de votre navigateur, sur votre appareil uniquement, et disparaissent
               lorsque vous videz les donnees du site.
             </p>
