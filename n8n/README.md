@@ -7,6 +7,8 @@ l'email de confirmation aux couleurs de la charte.
 | --- | --- |
 | `flowlab-lead.json` | Workflow principal : formulaires du site |
 | `flowlab-telechargement.json` | Workflow secondaire : comptage des telechargements |
+| `flowlab-file-attente-x.json` | Publication automatique sur X depuis une file d'attente |
+| `file-attente-x.csv` | 30 posts prets a publier, a importer dans Google Sheets |
 | `preparer-email.js` | Le code du noeud « Preparer l'email », en version lisible |
 | `construire-workflow.mjs` | Regenere le JSON a partir du `.js` |
 | `apercu-email.html` | Rendu de l'email, a ouvrir dans un navigateur |
@@ -127,3 +129,60 @@ est perdue : le comptage ne doit jamais bloquer un telechargement.
 - Il n'envoie pas la sequence de relance J+1, J+3, J+7.
 - Il ne recopie rien dans Google Sheets : la base vit uniquement dans Brevo.
 - La mini-formation envoie un seul email, pas les cinq lecons.
+
+
+## La file d'attente X
+
+Un compte neuf ne decolle pas grace a l'automatisation : il decolle grace a
+des reponses ecrites a la main dans les conversations de son secteur. Ce que
+l'automatisation apporte, c'est la **regularite** de la publication, qui est
+le point ou la plupart des comptes abandonnent.
+
+Le workflow lit une feuille Google Sheets et publie deux posts par jour.
+
+### Le cout, qui dicte la strategie
+
+Depuis fevrier 2026, X facture a l'usage :
+
+| Action | Cout |
+| --- | --- |
+| Publier un post | 0,015 $ |
+| Publier un post contenant un lien | 0,20 $ |
+| Lire un post | 0,005 $ |
+
+Un lien multiplie le prix par treize. Cela tombe bien : X pousse deja moins
+loin les posts qui sortent les gens de la plateforme. **Pas de lien dans le
+post, le lien en bio.** Deux posts par jour sans lien coutent moins d'un
+dollar par mois.
+
+Le noeud « Choisir le post » refuse donc tout post contenant un lien, sauf si
+la colonne `autoriser_lien` vaut `oui`. Sans ce garde-fou, une file entiere
+publiee par inadvertance avec des liens multiplie la facture sans prevenir.
+
+### Mise en place
+
+1. Creer une feuille Google Sheets et y importer `file-attente-x.csv`.
+   Colonnes attendues : `texte`, `theme`, `statut`, `autoriser_lien`,
+   `publie_le`, `tweet_id`.
+2. Importer `flowlab-file-attente-x.json` dans n8n.
+3. Remplacer `REMPLACER_PAR_ID_DE_LA_FEUILLE` dans les **deux** noeuds Google
+   Sheets. L'identifiant est la portion de l'URL entre `/d/` et `/edit`.
+4. Connecter le compte X dans le noeud « Publier sur X ».
+5. Activer le workflow.
+
+### Ce que fait le noeud de selection
+
+Il prend la premiere ligne au statut `a publier`, puis refuse :
+
+- les posts de plus de 280 caracteres ;
+- les posts contenant un lien non autorise ;
+- rien du tout quand la file est vide, plutot que de republier un ancien post.
+
+Chaque refus est trace dans les executions : une file vide doit se voir, pas
+passer inapercue.
+
+### Reapprovisionner
+
+Trente posts a deux par jour couvrent quinze jours. Le champ `restants` du
+noeud de selection indique ce qu'il reste : au-dessous de dix, il est temps
+d'ecrire la suite.
