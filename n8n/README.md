@@ -5,7 +5,8 @@ l'email de confirmation aux couleurs de la charte.
 
 | Fichier | Role |
 | --- | --- |
-| `flowlab-lead.json` | Le workflow, a importer dans n8n |
+| `flowlab-lead.json` | Workflow principal : formulaires du site |
+| `flowlab-telechargement.json` | Workflow secondaire : comptage des telechargements |
 | `preparer-email.js` | Le code du noeud « Preparer l'email », en version lisible |
 | `construire-workflow.mjs` | Regenere le JSON a partir du `.js` |
 | `apercu-email.html` | Rendu de l'email, a ouvrir dans un navigateur |
@@ -100,6 +101,22 @@ Le champ `tag` du JSON recu determine le contenu de l'email.
 | `contact` | formulaire de contact |
 
 Un tag inconnu retombe sur le contenu `newsletter` plutot que d'echouer.
+
+## Le second workflow : comptage des telechargements
+
+Les evenements personnalises de la mesure d'audience Vercel sont reserves aux
+offres payantes. Le comptage passe donc par n8n, deja en place.
+
+1. Importer `flowlab-telechargement.json`, remplacer le secret, activer.
+2. Copier la Production URL du webhook.
+3. La renseigner dans Vercel sous `N8N_WEBHOOK_TELECHARGEMENT_URL`, puis
+   redeployer.
+4. Brancher un node Google Sheets « Append » apres « Formater la ligne » : les
+   colonnes `date`, `ressource`, `fichier` et `canal` sont deja preparees.
+
+Le site appelle ce webhook puis sert le fichier sans attendre la reponse. Si
+n8n est injoignable, le visiteur recoit sa ressource et seule la statistique
+est perdue : le comptage ne doit jamais bloquer un telechargement.
 
 ## Ce que ce workflow ne fait pas encore
 

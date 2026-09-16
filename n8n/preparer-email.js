@@ -55,7 +55,7 @@ const CONTENUS = {
       'La liste des acces necessaires pour chaque workflow',
     ],
     cta: 'Telecharger le pack',
-    lien: SITE + '/ressources/pack-10-workflows-n8n',
+    lien: SITE + '/telechargement/pack-10-workflows-n8n',
   },
   'livre-blanc': {
     objet: 'Votre guide : automatiser son business en 2026',
@@ -67,7 +67,7 @@ const CONTENUS = {
       "15 cas d'usage classes par metier",
     ],
     cta: 'Telecharger le guide',
-    lien: SITE + '/ressources/guide-automatiser-son-business',
+    lien: SITE + '/telechargement/guide-automatiser-son-business',
   },
   'mini-formation': {
     objet: 'Votre premiere lecon arrive demain',

@@ -175,3 +175,133 @@ writeFileSync(
 );
 
 console.log("flowlab-lead.json genere.");
+
+/* ------------------------------------------------------------------ */
+/* Second workflow : comptage des telechargements                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Le site appelle ce webhook a chaque telechargement, puis sert le fichier
+ * sans attendre la reponse. Le comptage ne peut donc jamais empecher un
+ * visiteur d'obtenir sa ressource.
+ */
+const telechargements = {
+  name: "flow_lab — Telechargements",
+  nodes: [
+    {
+      parameters: {
+        httpMethod: "POST",
+        path: "flowlab-telechargement",
+        responseMode: "responseNode",
+        options: {},
+      },
+      id: "webhook-telechargement",
+      name: "Webhook telechargement",
+      type: "n8n-nodes-base.webhook",
+      typeVersion: 2,
+      position: [-220, 300],
+      webhookId: "flowlab-telechargement",
+    },
+    {
+      parameters: {
+        conditions: {
+          options: {
+            caseSensitive: true,
+            leftValue: "",
+            typeValidation: "loose",
+            version: 2,
+          },
+          conditions: [
+            {
+              id: "verif-secret-dl",
+              leftValue: "={{ $json.headers['x-flowlab-secret'] }}",
+              rightValue: "REMPLACER_PAR_VOTRE_SECRET",
+              operator: { type: "string", operation: "equals" },
+            },
+          ],
+          combinator: "and",
+        },
+        looseTypeValidation: true,
+        options: {},
+      },
+      id: "verif-secret-dl",
+      name: "Secret valide ?",
+      type: "n8n-nodes-base.if",
+      typeVersion: 2,
+      position: [0, 300],
+    },
+    {
+      parameters: {
+        respondWith: "json",
+        responseBody: '={{ JSON.stringify({ ok: true }) }}',
+        options: {},
+      },
+      id: "reponse-dl",
+      name: "Repondre 200",
+      type: "n8n-nodes-base.respondToWebhook",
+      typeVersion: 1.1,
+      position: [220, 200],
+    },
+    {
+      parameters: {
+        respondWith: "json",
+        responseBody: '={{ JSON.stringify({ error: "secret invalide" }) }}',
+        options: { responseCode: 401 },
+      },
+      id: "refus-dl",
+      name: "Refuser 401",
+      type: "n8n-nodes-base.respondToWebhook",
+      typeVersion: 1.1,
+      position: [220, 420],
+    },
+    {
+      parameters: {
+        jsCode: [
+          "/* Une ligne par telechargement, prete a etre ajoutee a une feuille.",
+          "   Brancher un node Google Sheets « Append » a la suite de celui-ci",
+          "   et associer chaque colonne au champ du meme nom. */",
+          "const e = $json.body || $json;",
+          "",
+          "return [{",
+          "  json: {",
+          "    date: e.receivedAt || new Date().toISOString(),",
+          "    ressource: e.ressource || '',",
+          "    fichier: e.fichier || '',",
+          "    canal: e.canal || 'direct',",
+          "  },",
+          "}];",
+        ].join("\n"),
+      },
+      id: "ligne-telechargement",
+      name: "Formater la ligne",
+      type: "n8n-nodes-base.code",
+      typeVersion: 2,
+      position: [440, 200],
+    },
+  ],
+  connections: {
+    "Webhook telechargement": {
+      main: [[{ node: "Secret valide ?", type: "main", index: 0 }]],
+    },
+    "Secret valide ?": {
+      main: [
+        [{ node: "Repondre 200", type: "main", index: 0 }],
+        [{ node: "Refuser 401", type: "main", index: 0 }],
+      ],
+    },
+    "Repondre 200": {
+      main: [[{ node: "Formater la ligne", type: "main", index: 0 }]],
+    },
+  },
+  settings: { executionOrder: "v1" },
+  pinData: {},
+};
+
+writeFileSync(
+  join(ici, "flowlab-telechargement.json"),
+  JSON.stringify(telechargements, null, 2) + "\n",
+  "utf8"
+);
+
+console.log("flowlab-telechargement.json genere.");
+

@@ -1,0 +1,104 @@
+{
+  "name": "flow_lab 01 — Veille automatisee",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "declencheur",
+      "name": "Chaque matin a 7 h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=automatisation+n8n&hl=fr",
+        "options": {}
+      },
+      "id": "lire-flux",
+      "name": "Lire le flux RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Filtre sur mots-cles. Commencez large pendant une semaine, notez\n   ce que vous ignorez systematiquement, puis resserrez : un bon\n   filtre se regle en observant, pas en devinant. */\nconst MOTS = ['n8n', 'automatisation', 'workflow', 'no-code'];\n\nreturn items.filter(function (item) {\n  const texte = ((item.json.title || '') + ' ' + (item.json.contentSnippet || '')).toLowerCase();\n  return MOTS.some(function (mot) { return texte.includes(mot); });\n});"
+      },
+      "id": "filtrer",
+      "name": "Ecarter le bruit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Un seul message recapitulatif plutot qu'un email par article :\n   remplacer une boite mail encombree par une autre ne sert a rien. */\nconst lignes = items.map(function (item) {\n  return '- ' + item.json.title + '\\n  ' + item.json.link;\n});\n\nreturn [{ json: { total: items.length, resume: lignes.join('\\n') } }];"
+      },
+      "id": "resumer",
+      "name": "Assembler le resume",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Chaque matin a 7 h": {
+      "main": [
+        [
+          {
+            "node": "Lire le flux RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lire le flux RSS": {
+      "main": [
+        [
+          {
+            "node": "Ecarter le bruit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ecarter le bruit": {
+      "main": [
+        [
+          {
+            "node": "Assembler le resume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
       // Les pages de confirmation n'ont de sens qu'apres un formulaire :
       // indexees seules, elles gaspillent du budget d'exploration et
       // presentent une ressource sans son argumentaire.
-      disallow: ["/merci/", "/api/"],
+      disallow: ["/merci/", "/telechargement/", "/api/"],
     },
     sitemap: `${site.url}/sitemap.xml`,
   };

@@ -9,6 +9,15 @@
 
 export type ResourceKind = "workflow-pack" | "livre-blanc" | "mini-formation";
 
+/** Un fichier reellement telechargeable, servi depuis public/ressources. */
+export type ResourceFile = {
+  /** Nom affiche dans la liste. */
+  label: string;
+  /** Chemin public du fichier. */
+  path: string;
+  description: string;
+};
+
 export type Resource = {
   slug: string;
   kind: ResourceKind;
@@ -25,6 +34,11 @@ export type Resource = {
   cta: string;
   /** Identifiant envoye a n8n : sert a router vers le bon email Brevo. */
   n8nTag: string;
+  /**
+   * Fichiers remis sur la page de telechargement. Vide tant que la ressource
+   * n'existe pas : la page le dit plutot que de proposer un lien mort.
+   */
+  files: ResourceFile[];
   featured?: boolean;
 };
 
@@ -45,6 +59,28 @@ export const resources: Resource[] = [
     format: "10 fichiers .json + guide PDF",
     cta: "Recevoir le pack gratuitement",
     n8nTag: "pack-workflows",
+    files: [
+      {
+        label: "Veille automatisee",
+        path: "/ressources/pack-workflows/01-veille-automatisee.json",
+        description: "Lit un flux RSS chaque matin, ecarte le bruit et assemble un resume.",
+      },
+      {
+        label: "Relance des prospects",
+        path: "/ressources/pack-workflows/02-relance-prospects.json",
+        description: "Relance les prospects sans reponse, avec delai et plafond de relances.",
+      },
+      {
+        label: "Publication multi-reseaux",
+        path: "/ressources/pack-workflows/03-publication-multi-reseaux.json",
+        description: "Decline un contenu au format de chaque reseau depuis une source unique.",
+      },
+      {
+        label: "Guide d'installation",
+        path: "/ressources/pack-workflows/LISEZ-MOI.md",
+        description: "Comment importer un workflow et les deux pieges a eviter.",
+      },
+    ],
     featured: true,
   },
   {
@@ -63,6 +99,7 @@ export const resources: Resource[] = [
     format: "PDF, 40 pages",
     cta: "Telecharger le guide",
     n8nTag: "livre-blanc",
+    files: [],
   },
   {
     slug: "mini-formation-n8n",
@@ -80,6 +117,7 @@ export const resources: Resource[] = [
     format: "5 emails, 10 minutes par jour",
     cta: "Commencer la formation",
     n8nTag: "mini-formation",
+    files: [],
   },
 ];
 

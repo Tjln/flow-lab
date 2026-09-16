@@ -1,0 +1,79 @@
+{
+  "name": "flow_lab 02 — Relance des prospects sans reponse",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "declencheur",
+      "name": "Chaque jour a 9 h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Remplacez cette source par votre CRM ou votre Google Sheet.\n   Le reste du workflow ne depend pas de l'outil choisi. */\nreturn [\n  { json: { email: 'prospect@example.com', prenom: 'Camille', envoyeLe: '2026-09-01', relances: 0 } },\n];"
+      },
+      "id": "source",
+      "name": "Lire les prospects",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Deux garde-fous : un delai minimum, et un plafond de relances.\n   Sans le plafond, un prospect silencieux est relance indefiniment,\n   ce qui abime la reputation d'envoi du domaine. */\nconst DELAI_JOURS = 5;\nconst MAX_RELANCES = 2;\nconst maintenant = Date.now();\n\nreturn items.filter(function (item) {\n  const jours = (maintenant - new Date(item.json.envoyeLe).getTime()) / 86400000;\n  return jours >= DELAI_JOURS && (item.json.relances || 0) < MAX_RELANCES;\n});"
+      },
+      "id": "filtrer",
+      "name": "A relancer ?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Chaque jour a 9 h": {
+      "main": [
+        [
+          {
+            "node": "Lire les prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lire les prospects": {
+      "main": [
+        [
+          {
+            "node": "A relancer ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
