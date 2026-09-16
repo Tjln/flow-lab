@@ -32,7 +32,7 @@ const GRIS = '#6f6f74';
  * Les identifiants sont des nombres, lisibles dans l'URL de chaque liste
  * dans Brevo. Mettre 0 pour desactiver une liste ciblee.
  */
-const LISTE_PRINCIPALE = 0;
+const LISTE_PRINCIPALE = 4;
 
 const LISTES_PAR_TAG = {
   'pack-workflows': 0,
@@ -115,6 +115,21 @@ const CONTENUS = {
   },
 };
 
+/**
+ * Marque les liens de l'email pour que le clic soit reconnaissable.
+ *
+ * Brevo compte les clics de son cote, mais ne dit rien de ce que la personne
+ * fait ensuite sur le site. Ces parametres sont lus par la mesure d'audience
+ * et par la capture d'origine du site, qui les conserve jusqu'a une eventuelle
+ * conversion ulterieure.
+ */
+function marquer(url, campagne) {
+  const separateur = url.indexOf('?') === -1 ? '?' : '&';
+  return url + separateur
+    + 'utm_source=email&utm_medium=transactionnel&utm_campaign='
+    + encodeURIComponent(campagne);
+}
+
 /* Le site poste un JSON : selon la configuration du webhook, il arrive
    sous $json.body ou directement dans $json. On accepte les deux. */
 const lead = $json.body || $json;
@@ -159,7 +174,7 @@ const RESEAUX = [
   ['TikTok', 'https://tiktok.com/@flowlab.fr'],
 ];
 const liensReseaux = RESEAUX.map(function (r) {
-  return '<a href="' + r[1] + '" style="color:' + FOND + ';text-decoration:none;font-size:13px;padding:0 7px;">' + r[0] + '</a>';
+  return '<a href="' + marquer(r[1], 'email-' + tag) + '" style="color:' + FOND + ';text-decoration:none;font-size:13px;padding:0 7px;">' + r[0] + '</a>';
 }).join('<span style="color:#4a4a4a;">&middot;</span>');
 
 const html = '<!DOCTYPE html>'
@@ -188,7 +203,7 @@ const html = '<!DOCTYPE html>'
   + '<p style="margin:12px 0 0 0;font-size:16px;line-height:25px;color:' + GRIS + ';">' + contenu.intro + '</p>'
   + listePoints
   + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:32px;"><tr>'
-  + '<td style="background:' + ORANGE + ';"><a href="' + contenu.lien + '" style="display:inline-block;padding:15px 32px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">' + contenu.cta + '</a></td>'
+  + '<td style="background:' + ORANGE + ';"><a href="' + marquer(contenu.lien, tag) + '" style="display:inline-block;padding:15px 32px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">' + contenu.cta + '</a></td>'
   + '</tr></table>'
   + '<p style="margin:28px 0 0 0;font-size:13px;line-height:20px;color:' + GRIS + ';">Une question ? Repondez simplement a cet email, nous lisons tout.</p>'
   + '</td></tr>'
