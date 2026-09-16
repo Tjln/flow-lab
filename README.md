@@ -177,8 +177,13 @@ L'URL du webhook n'est jamais exposee au navigateur : elle reste cote serveur.
 
 ## Deploiement
 
-Pousser le depot sur GitHub, importer le projet dans Vercel, renseigner les
-trois variables d'environnement, deployer.
+Depot : https://github.com/Tjln/flow-lab. Chaque push sur `main` declenche un
+deploiement.
+
+Seules deux variables sont a renseigner dans Vercel : `N8N_WEBHOOK_URL` et
+`N8N_WEBHOOK_SECRET`. L'adresse publique du site est deduite du domaine de
+production fourni par Vercel ; `NEXT_PUBLIC_SITE_URL` ne sert qu'a la forcer,
+le jour ou un vrai nom de domaine sera pose.
 
 Attention : n8n Cloud en offre d'essai est limite dans le temps. A son
 expiration, le site continue d'afficher les formulaires mais les leads ne sont

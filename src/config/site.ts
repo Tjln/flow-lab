@@ -3,12 +3,33 @@
  * Point unique de verite pour la navigation, les reseaux et le SEO.
  */
 
+/**
+ * Adresse publique du site, utilisee par les metadonnees de partage, le
+ * sitemap et les liens de partage social.
+ *
+ * Vercel expose le domaine de production a la construction : on s'en sert
+ * pour que le site s'auto-configure, plutot que de dependre d'une variable
+ * a renseigner a la main. Une URL fausse ici casse silencieusement les
+ * apercus de partage, ce qui est invisible en navigation mais coute cher
+ * quand tout le trafic vient des reseaux.
+ */
+function resolveSiteUrl(): string {
+  // 1. Valeur explicite : indispensable le jour ou un vrai domaine sera pose.
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+
+  // 2. Domaine de production fourni par Vercel, sans protocole.
+  const vercelDomain = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL;
+  if (vercelDomain) return `https://${vercelDomain}`;
+
+  return "http://localhost:3000";
+}
+
 export const site = {
   name: "flow_lab",
   tagline: "Automatisez ce qui vous fait perdre du temps",
   description:
     "flow_lab forme les freelances, PME et equipes ops a n8n, et livre des workflows prets a l'emploi. Formations, ressources gratuites et conseil en automatisation.",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://flow-lab.vercel.app",
+  url: resolveSiteUrl(),
   locale: "fr_FR",
   email: "hello@flow-lab.fr",
   phone: "+33 6 12 34 56 78",
