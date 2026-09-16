@@ -1,0 +1,191 @@
+{
+  "name": "flow_lab — Collecte de leads",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "flowlab-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-lead",
+      "name": "Webhook du site",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -220,
+        300
+      ],
+      "webhookId": "flowlab-lead"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "verif-secret",
+              "leftValue": "={{ $json.headers['x-flowlab-secret'] }}",
+              "rightValue": "REMPLACER_PAR_VOTRE_SECRET",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "verif-secret",
+      "name": "Secret valide ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true }) }}",
+        "options": {}
+      },
+      "id": "reponse-ok",
+      "name": "Repondre 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: \"secret invalide\" }) }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "reponse-refus",
+      "name": "Refuser 401",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Code du noeud « Preparer l'email » du workflow n8n.\n *\n * Ce fichier est la version lisible de ce qui est embarque dans\n * flowlab-lead.json. Pour modifier les emails, modifier ici puis\n * regenerer le workflow avec : node n8n/construire-workflow.mjs\n *\n * Un seul gabarit HTML, decline par tag : le message change, la mise en\n * forme reste celle de la charte. Ajouter une ressource sur le site\n * revient donc a ajouter une entree dans CONTENUS, rien d'autre.\n */\n\nconst SITE = 'https://flow-lab-iota.vercel.app';\n\n/* Couleurs de la charte. Les emails ne connaissent pas les variables CSS :\n   il faut les repeter en dur, donc on les centralise ici. */\nconst NOIR = '#191919';\nconst ORANGE = '#dc7917';\nconst FOND = '#f1f1f2';\nconst GRIS = '#6f6f74';\n\nconst CONTENUS = {\n  'pack-workflows': {\n    objet: 'Votre pack de 10 workflows n8n',\n    titre: 'Votre pack est pret',\n    intro: \"Merci ! Voici les 10 workflows que nous deployons le plus souvent chez nos clients. Chaque fichier s'importe directement dans n8n.\",\n    points: [\n      '10 fichiers JSON a importer',\n      \"Un guide d'installation pas a pas\",\n      'La liste des acces necessaires pour chaque workflow',\n    ],\n    cta: 'Telecharger le pack',\n    lien: SITE + '/ressources/pack-10-workflows-n8n',\n  },\n  'livre-blanc': {\n    objet: 'Votre guide : automatiser son business en 2026',\n    titre: 'Votre guide est pret',\n    intro: 'Merci ! Voici notre methode pour reperer et chiffrer les taches qui vous coutent le plus de temps.',\n    points: [\n      \"La methode d'audit en 4 etapes\",\n      'Le tableau de calcul du temps economise',\n      \"15 cas d'usage classes par metier\",\n    ],\n    cta: 'Telecharger le guide',\n    lien: SITE + '/ressources/guide-automatiser-son-business',\n  },\n  'mini-formation': {\n    objet: 'Votre premiere lecon arrive demain',\n    titre: 'Bienvenue dans la formation',\n    intro: 'Vous recevrez une lecon par jour pendant cinq jours. Dix minutes chaque matin, et un workflow qui tourne pour de vrai a la fin.',\n    points: [\n      'Jour 1 : installer n8n et comprendre les nodes',\n      'Jour 2 : les declencheurs',\n      'Jour 3 : connecter deux outils',\n    ],\n    cta: 'Voir le programme complet',\n    lien: SITE + '/formations',\n  },\n  'formation-metier': {\n    objet: \"Vous etes sur la liste d'attente\",\n    titre: 'Votre place est reservee',\n    intro: \"Merci ! Vous serez prevenu en premier a l'ouverture du parcours Construire vos workflows metier.\",\n    points: [],\n    cta: 'Voir les autres parcours',\n    lien: SITE + '/formations',\n  },\n  'formation-equipes': {\n    objet: \"Vous etes sur la liste d'attente\",\n    titre: 'Votre place est reservee',\n    intro: \"Merci ! Vous serez prevenu en premier a l'ouverture de l'atelier n8n a l'echelle d'une equipe.\",\n    points: [],\n    cta: 'Voir les autres parcours',\n    lien: SITE + '/formations',\n  },\n  newsletter: {\n    objet: 'Bienvenue chez flow_lab',\n    titre: 'Vous etes inscrit',\n    intro: \"Chaque semaine, vous recevrez un workflow n8n utile, avec le fichier a importer. Rien d'autre.\",\n    points: [],\n    cta: 'Decouvrir les ressources gratuites',\n    lien: SITE + '/ressources',\n  },\n  contact: {\n    objet: 'Nous avons bien recu votre message',\n    titre: 'Message bien recu',\n    intro: 'Merci de nous avoir ecrit. Nous revenons vers vous sous 48 heures ouvrees avec une premiere piste.',\n    points: [],\n    cta: 'Voir nos services',\n    lien: SITE + '/services',\n  },\n};\n\n/* Le site poste un JSON : selon la configuration du webhook, il arrive\n   sous $json.body ou directement dans $json. On accepte les deux. */\nconst lead = $json.body || $json;\nconst tag = lead.tag || 'newsletter';\nconst contenu = CONTENUS[tag] || CONTENUS.newsletter;\nconst prenom = (lead.firstName || '').trim();\nconst bonjour = prenom ? 'Bonjour ' + prenom + ',' : 'Bonjour,';\n\n/* Escalier de carres de la charte, construit en cellules de tableau :\n   c'est le seul moyen fiable d'obtenir le meme rendu dans Gmail,\n   Outlook et Apple Mail, qui ignorent une bonne partie du CSS. */\nconst CARRES = [[0, 0], [1, 1], [2, 1], [2, 2]];\nlet escalier = '<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">';\nfor (let ligne = 0; ligne < 3; ligne++) {\n  escalier += '<tr>';\n  for (let col = 0; col < 3; col++) {\n    const plein = CARRES.some(function (c) { return c[0] === col && c[1] === ligne; });\n    escalier += '<td width=\"14\" height=\"14\" style=\"width:14px;height:14px;line-height:14px;font-size:0;background:'\n      + (plein ? ORANGE : 'transparent') + ';\">&nbsp;</td>';\n  }\n  escalier += '</tr>';\n}\nescalier += '</table>';\n\nlet listePoints = '';\nif (contenu.points.length) {\n  const lignes = contenu.points.map(function (point) {\n    return '<tr>'\n      + '<td width=\"18\" valign=\"top\" style=\"padding:4px 0;\"><div style=\"width:6px;height:6px;background:' + ORANGE + ';margin-top:8px;\"></div></td>'\n      + '<td style=\"padding:4px 0;font-size:15px;line-height:22px;color:' + GRIS + ';\">' + point + '</td>'\n      + '</tr>';\n  }).join('');\n  listePoints = '<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" style=\"margin-top:24px;\">'\n    + lignes + '</table>';\n}\n\nconst RESEAUX = [\n  ['LinkedIn', 'https://linkedin.com/company/flow-lab'],\n  ['X', 'https://x.com/flowlab_fr'],\n  ['YouTube', 'https://youtube.com/@flowlab'],\n  ['Instagram', 'https://instagram.com/flowlab.fr'],\n  ['TikTok', 'https://tiktok.com/@flowlab.fr'],\n];\nconst liensReseaux = RESEAUX.map(function (r) {\n  return '<a href=\"' + r[1] + '\" style=\"color:' + FOND + ';text-decoration:none;font-size:13px;padding:0 7px;\">' + r[0] + '</a>';\n}).join('<span style=\"color:#4a4a4a;\">&middot;</span>');\n\nconst html = '<!DOCTYPE html>'\n  + '<html lang=\"fr\"><head><meta charset=\"utf-8\">'\n  + '<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">'\n  + '<title>' + contenu.objet + '</title></head>'\n  + '<body style=\"margin:0;padding:0;background:' + FOND + ';\">'\n  // Texte d'apercu : ce que la boite mail affiche a cote de l'objet.\n  + '<div style=\"display:none;max-height:0;overflow:hidden;opacity:0;\">' + contenu.intro + '</div>'\n  + '<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" style=\"background:' + FOND + ';\">'\n  + '<tr><td align=\"center\" style=\"padding:32px 16px;\">'\n  + '<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"600\" style=\"width:600px;max-width:100%;\">'\n\n  // Bandeau superieur, avec le logotype reconstitue en texte.\n  + '<tr><td style=\"background:' + NOIR + ';padding:20px 32px;\">'\n  + '<span style=\"display:inline-block;width:10px;height:10px;background:' + ORANGE + ';vertical-align:middle;\"></span>'\n  + '<span style=\"color:' + FOND + ';font-family:Helvetica,Arial,sans-serif;font-size:18px;font-weight:bold;font-style:italic;letter-spacing:-0.3px;padding-left:10px;vertical-align:middle;\">'\n  + 'flow<span style=\"color:' + ORANGE + ';\">_</span>lab</span>'\n  + '</td></tr>'\n\n  // Corps du message.\n  + '<tr><td style=\"background:#ffffff;padding:40px 32px;font-family:Helvetica,Arial,sans-serif;\">'\n  + escalier\n  + '<h1 style=\"margin:24px 0 0 0;font-size:30px;line-height:36px;color:' + NOIR + ';font-weight:bold;letter-spacing:-0.5px;\">' + contenu.titre + '</h1>'\n  + '<p style=\"margin:20px 0 0 0;font-size:16px;line-height:25px;color:' + NOIR + ';\">' + bonjour + '</p>'\n  + '<p style=\"margin:12px 0 0 0;font-size:16px;line-height:25px;color:' + GRIS + ';\">' + contenu.intro + '</p>'\n  + listePoints\n  + '<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-top:32px;\"><tr>'\n  + '<td style=\"background:' + ORANGE + ';\"><a href=\"' + contenu.lien + '\" style=\"display:inline-block;padding:15px 32px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;\">' + contenu.cta + '</a></td>'\n  + '</tr></table>'\n  + '<p style=\"margin:28px 0 0 0;font-size:13px;line-height:20px;color:' + GRIS + ';\">Une question ? Repondez simplement a cet email, nous lisons tout.</p>'\n  + '</td></tr>'\n\n  // Pied de page.\n  + '<tr><td style=\"background:' + NOIR + ';padding:28px 32px;font-family:Helvetica,Arial,sans-serif;text-align:center;\">'\n  + '<div style=\"margin-bottom:14px;\">' + liensReseaux + '</div>'\n  + '<p style=\"margin:0;font-size:12px;line-height:19px;color:#9a9a9f;\">'\n  + 'flow_lab, projet etudiant. Aucune vente.<br>'\n  + \"Vous recevez cet email parce que vous l'avez demande sur notre site.<br>\"\n  + '<a href=\"{{ unsubscribe }}\" style=\"color:#9a9a9f;text-decoration:underline;\">Se desinscrire en un clic</a>'\n  + '</p></td></tr>'\n\n  + '</table></td></tr></table></body></html>';\n\n/* Charge utile attendue par l'API Brevo, prete a etre envoyee telle quelle. */\nreturn [{\n  json: {\n    objet: contenu.objet,\n    destinataire: lead.email,\n    tag: tag,\n    brevoPayload: {\n      sender: { name: 'flow_lab', email: 'hello@flow-lab.fr' },\n      to: [prenom ? { email: lead.email, name: prenom } : { email: lead.email }],\n      subject: contenu.objet,\n      htmlContent: html,\n      tags: [tag],\n    },\n  },\n}];\n"
+      },
+      "id": "preparer-email",
+      "name": "Preparer l'email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "REMPLACER_PAR_VOTRE_CLE_BREVO"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.brevoPayload) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "envoyer-brevo",
+      "name": "Envoyer via Brevo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        200
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook du site": {
+      "main": [
+        [
+          {
+            "node": "Secret valide ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Secret valide ?": {
+      "main": [
+        [
+          {
+            "node": "Repondre 200",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Refuser 401",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Repondre 200": {
+      "main": [
+        [
+          {
+            "node": "Preparer l'email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparer l'email": {
+      "main": [
+        [
+          {
+            "node": "Envoyer via Brevo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
